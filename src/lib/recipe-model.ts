@@ -1,5 +1,18 @@
 import mongoose, { type Document, type Model } from 'mongoose';
-import type { TCreateRecipeInput } from './schemas/recipe';
+
+export interface IRecipeDocument extends Document {
+  title: string;
+  description: string;
+  servings: number;
+  prepMin: number;
+  cookMin: number;
+  difficulty: 'easy' | 'medium' | 'hard';
+  tags: string[];
+  ingredients: { name: string; qty: number; unit: string }[];
+  steps: string[];
+  createdAt: Date;
+  updatedAt: Date;
+}
 
 const ingredientMongooseSchema = new mongoose.Schema(
   {
@@ -12,7 +25,7 @@ const ingredientMongooseSchema = new mongoose.Schema(
 
 const recipeMongooseSchema = new mongoose.Schema(
   {
-    title: { type: String, required: true, trim: true },
+    title: { type: String, required: true, trim: true, unique: true },
     description: { type: String, required: true },
     servings: { type: Number, required: true },
     prepMin: { type: Number, required: true },
@@ -31,6 +44,6 @@ const recipeMongooseSchema = new mongoose.Schema(
   }
 );
 
-export const RecipeModel: Model<TCreateRecipeInput & Document> =
-  (mongoose.models['Recipe'] as Model<TCreateRecipeInput & Document> | undefined) ??
-  mongoose.model<TCreateRecipeInput & Document>('Recipe', recipeMongooseSchema);
+export const RecipeModel: Model<IRecipeDocument> =
+  (mongoose.models['Recipe'] as Model<IRecipeDocument> | undefined) ??
+  mongoose.model<IRecipeDocument>('Recipe', recipeMongooseSchema);
