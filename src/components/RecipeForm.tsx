@@ -85,7 +85,7 @@ export default function RecipeForm({ initialData, onSubmit, submitLabel }: Recip
     queryKey: recipeKeys.tags(),
     queryFn: fetchTags,
   });
-  const availableTags: string[] = (tagsQuery.data ?? []).map((t) => t.name);
+  const availableTags: string[] = tagsQuery.data ?? [];
 
   function handleAddIngredient() {
     setForm((prev) => ({ ...prev, ingredients: [...prev.ingredients, emptyIngredient()] }));

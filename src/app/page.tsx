@@ -32,9 +32,6 @@ export default function HomePage() {
         <Link component={NextLink} href="/recipes" variant="button" sx={{ mr: 2 }}>
           Recipes →
         </Link>
-        <Link component={NextLink} href="/tags" variant="button" sx={{ mr: 2 }}>
-          Manage Tags →
-        </Link>
         <Link component={NextLink} href="/recipes-example" variant="button">
           Example page →
         </Link>

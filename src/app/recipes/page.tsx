@@ -71,7 +71,7 @@ export default function RecipesPage() {
 
   const recipes: TRecipeDocument[] = query.data?.recipes ?? [];
   const totalPages = query.data?.totalPages ?? 1;
-  const availableTags: string[] = (tagsQuery.data ?? []).map((t) => t.name);
+  const availableTags: string[] = tagsQuery.data ?? [];
 
   return (
     <Container maxWidth="md" sx={{ py: 4 }}>

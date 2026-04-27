@@ -1,5 +1,4 @@
 import type { TRecipeDocument, TCreateRecipeInput, TUpdateRecipeInput } from './schemas/recipe';
-import type { TTagDocument } from './schemas/tag';
 
 export class ApiError extends Error {
   constructor(
@@ -89,33 +88,8 @@ export async function deleteRecipe(id: string): Promise<void> {
   if (!res.ok) throw new ApiError(res.status, 'Failed to delete recipe');
 }
 
-export async function fetchTags(): Promise<TTagDocument[]> {
-  const res = await fetch('/api/tags');
+export async function fetchTags(): Promise<string[]> {
+  const res = await fetch('/api/recipes/tags');
   if (!res.ok) throw new ApiError(res.status, 'Failed to fetch tags');
   return res.json();
-}
-
-export type CreateTagResult =
-  | { ok: true; tag: TTagDocument }
-  | { ok: false; fieldErrors?: Record<string, string[]>; error?: string };
-
-export async function createTag(data: { name: string }): Promise<CreateTagResult> {
-  const res = await fetch('/api/tags', {
-    method: 'POST',
-    headers: { 'content-type': 'application/json' },
-    body: JSON.stringify(data),
-  });
-  const json = await res.json();
-  if (!res.ok) {
-    if (res.status === 400 && json.fieldErrors) {
-      return { ok: false, fieldErrors: json.fieldErrors, error: json.error };
-    }
-    throw new ApiError(res.status, json.error ?? 'Failed to create tag');
-  }
-  return { ok: true, tag: json };
-}
-
-export async function deleteTag(id: string): Promise<void> {
-  const res = await fetch(`/api/tags/${id}`, { method: 'DELETE' });
-  if (!res.ok) throw new ApiError(res.status, 'Failed to delete tag');
 }
