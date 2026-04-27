@@ -25,10 +25,20 @@ import Link from 'next/link';
 import { useState } from 'react';
 import { recipeKeys } from '@/lib/recipe-keys';
 import { fetchRecipe, deleteRecipe } from '@/lib/api';
+import type { TIngredient } from '@/lib/schemas/recipe';
 
 export default function RecipeDetailPage() {
   const params = useParams();
-  const id = (Array.isArray(params.id) ? params.id[0] : params.id) as string;
+  const rawId = params.id;
+  const id = Array.isArray(rawId) ? rawId[0] : rawId;
+
+  if (!id) {
+    return (
+      <Container maxWidth="md" sx={{ py: 4 }}>
+        <Alert severity="error">Recipe ID is missing</Alert>
+      </Container>
+    );
+  }
   const router = useRouter();
   const queryClient = useQueryClient();
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
@@ -123,9 +133,9 @@ export default function RecipeDetailPage() {
         {recipe.description}
       </Typography>
 
-      {(recipe.tags?.length ?? 0) > 0 && (
+      {(recipe.tags.length > 0) && (
         <Box sx={{ mb: 3, display: 'flex', gap: 0.5, flexWrap: 'wrap' }}>
-          {(recipe.tags ?? []).map((tag: string) => (
+          {recipe.tags.map((tag: string) => (
             <Chip key={tag} label={tag} size="small" variant="outlined" />
           ))}
         </Box>
@@ -155,7 +165,7 @@ export default function RecipeDetailPage() {
         <CardContent>
           <Typography variant="h6" sx={{ mb: 1 }}>Ingredients</Typography>
           <Stack spacing={0.5}>
-            {recipe.ingredients?.map((ing: { name: string; qty: number; unit: string }, i: number) => (
+            {recipe.ingredients.map((ing: TIngredient, i: number) => (
               <Box key={i} sx={{ display: 'flex', justifyContent: 'space-between' }}>
                 <Typography variant="body2">{ing.name}</Typography>
                 <Typography variant="body2" color="text.secondary">
@@ -171,7 +181,7 @@ export default function RecipeDetailPage() {
         <CardContent>
           <Typography variant="h6" sx={{ mb: 1 }}>Steps</Typography>
           <Stack spacing={1.5}>
-            {recipe.steps?.map((step: string, i: number) => (
+            {recipe.steps.map((step: string, i: number) => (
               <Box key={i} sx={{ display: 'flex', gap: 1 }}>
                 <Typography variant="body2" fontWeight="bold" sx={{ minWidth: 24 }}>
                   {i + 1}.

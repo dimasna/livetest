@@ -1,4 +1,4 @@
-import type { TRecipeDocument, TCreateRecipeInput, TUpdateRecipeInput } from './schemas/recipe';
+import { RecipeDocumentSchema, type TRecipeDocument, type TCreateRecipeInput, type TUpdateRecipeInput } from './schemas/recipe';
 
 export class ApiError extends Error {
   constructor(
@@ -18,6 +18,10 @@ interface PaginatedRecipes {
   totalPages: number;
 }
 
+function validateRecipe(data: unknown): TRecipeDocument {
+  return RecipeDocumentSchema.parse(data);
+}
+
 export async function fetchRecipes(filters: {
   search?: string;
   tags?: string[];
@@ -34,13 +38,17 @@ export async function fetchRecipes(filters: {
 
   const res = await fetch(`/api/recipes?${params.toString()}`);
   if (!res.ok) throw new ApiError(res.status, 'Failed to fetch recipes');
-  return res.json();
+  const json = await res.json();
+  return {
+    ...json,
+    recipes: json.recipes.map(validateRecipe),
+  };
 }
 
 export async function fetchRecipe(id: string): Promise<TRecipeDocument> {
   const res = await fetch(`/api/recipes/${id}`);
   if (!res.ok) throw new ApiError(res.status, res.status === 404 ? 'Recipe not found' : 'Failed to fetch recipe');
-  return res.json();
+  return validateRecipe(await res.json());
 }
 
 export type CreateRecipeResult =
@@ -60,7 +68,7 @@ export async function createRecipe(data: TCreateRecipeInput): Promise<CreateReci
     }
     throw new ApiError(res.status, json.error ?? 'Failed to create recipe');
   }
-  return { ok: true, recipe: json };
+  return { ok: true, recipe: validateRecipe(json) };
 }
 
 export type UpdateRecipeResult =
@@ -80,7 +88,7 @@ export async function updateRecipe(id: string, data: TUpdateRecipeInput): Promis
     }
     throw new ApiError(res.status, json.error ?? 'Failed to update recipe');
   }
-  return { ok: true, recipe: json };
+  return { ok: true, recipe: validateRecipe(json) };
 }
 
 export async function deleteRecipe(id: string): Promise<void> {

@@ -3,10 +3,14 @@ import { RecipeModel } from '@/lib/recipe-model';
 import { RecipeUpdateSchema } from '@/lib/schemas/recipe';
 import { zodErrorsToFieldErrors } from '@/lib/api-utils';
 import { withDB } from '@/lib/with-db';
+import { serializeRecipeDoc } from '@/lib/serialize';
 import mongoose from 'mongoose';
 
 export const GET = withDB(async (request: NextRequest, { params }) => {
-  const id = (await params).id!;
+  const { id } = await params;
+  if (!id) {
+    return NextResponse.json({ error: 'Missing recipe ID' }, { status: 400 });
+  }
 
   if (!mongoose.Types.ObjectId.isValid(id)) {
     return NextResponse.json({ error: 'Invalid recipe ID' }, { status: 400 });
@@ -16,11 +20,14 @@ export const GET = withDB(async (request: NextRequest, { params }) => {
   if (!recipe) {
     return NextResponse.json({ error: 'Recipe not found' }, { status: 404 });
   }
-  return NextResponse.json(recipe);
+  return NextResponse.json(serializeRecipeDoc(recipe));
 });
 
 export const PUT = withDB(async (request: NextRequest, { params }) => {
-  const id = (await params).id!;
+  const { id } = await params;
+  if (!id) {
+    return NextResponse.json({ error: 'Missing recipe ID' }, { status: 400 });
+  }
 
   if (!mongoose.Types.ObjectId.isValid(id)) {
     return NextResponse.json({ error: 'Invalid recipe ID' }, { status: 400 });
@@ -68,11 +75,14 @@ export const PUT = withDB(async (request: NextRequest, { params }) => {
     return NextResponse.json({ error: 'Recipe not found' }, { status: 404 });
   }
 
-  return NextResponse.json(updated);
+  return NextResponse.json(serializeRecipeDoc(updated));
 });
 
 export const DELETE = withDB(async (_request: NextRequest, { params }) => {
-  const id = (await params).id!;
+  const { id } = await params;
+  if (!id) {
+    return NextResponse.json({ error: 'Missing recipe ID' }, { status: 400 });
+  }
 
   if (!mongoose.Types.ObjectId.isValid(id)) {
     return NextResponse.json({ error: 'Invalid recipe ID' }, { status: 400 });

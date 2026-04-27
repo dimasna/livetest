@@ -3,6 +3,7 @@ import { RecipeModel } from '@/lib/recipe-model';
 import { RecipeSchema } from '@/lib/schemas/recipe';
 import { zodErrorsToFieldErrors } from '@/lib/api-utils';
 import { withDB } from '@/lib/with-db';
+import { serializeRecipeDoc, serializeRecipeDocs } from '@/lib/serialize';
 
 export const GET = withDB(async (request: NextRequest) => {
   const { searchParams } = new URL(request.url);
@@ -48,7 +49,7 @@ export const GET = withDB(async (request: NextRequest) => {
     .lean();
 
   return NextResponse.json({
-    recipes,
+    recipes: serializeRecipeDocs(recipes),
     total,
     page,
     totalPages: Math.ceil(total / limit),
@@ -85,5 +86,5 @@ export const POST = withDB(async (request: NextRequest) => {
   }
 
   const recipe = await RecipeModel.create(data);
-  return NextResponse.json(recipe, { status: 201 });
+  return NextResponse.json(serializeRecipeDoc(recipe.toObject()), { status: 201 });
 });
