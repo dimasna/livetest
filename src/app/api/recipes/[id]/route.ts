@@ -1,116 +1,87 @@
 import { type NextRequest, NextResponse } from 'next/server';
-import { connectDB } from '@/lib/db';
 import { RecipeModel } from '@/lib/recipe-model';
 import { RecipeUpdateSchema } from '@/lib/schemas/recipe';
+import { zodErrorsToFieldErrors } from '@/lib/api-utils';
+import { withDB } from '@/lib/with-db';
 import mongoose from 'mongoose';
 
-export async function GET(
-  _request: NextRequest,
-  { params }: { params: Promise<{ id: string }> },
-) {
-  try {
-    await connectDB();
-    const { id } = await params;
+export const GET = withDB(async (request: NextRequest, { params }) => {
+  const id = (await params).id!;
 
-    if (!mongoose.Types.ObjectId.isValid(id)) {
-      return NextResponse.json({ error: 'Invalid recipe ID' }, { status: 400 });
-    }
-
-    const recipe = await RecipeModel.findById(id).lean();
-    if (!recipe) {
-      return NextResponse.json({ error: 'Recipe not found' }, { status: 404 });
-    }
-
-    return NextResponse.json(recipe);
-  } catch (err) {
-    const message = err instanceof Error ? err.message : 'Unknown error';
-    return NextResponse.json({ error: message }, { status: 500 });
+  if (!mongoose.Types.ObjectId.isValid(id)) {
+    return NextResponse.json({ error: 'Invalid recipe ID' }, { status: 400 });
   }
-}
 
-export async function PUT(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string }> },
-) {
+  const recipe = await RecipeModel.findById(id).lean();
+  if (!recipe) {
+    return NextResponse.json({ error: 'Recipe not found' }, { status: 404 });
+  }
+  return NextResponse.json(recipe);
+});
+
+export const PUT = withDB(async (request: NextRequest, { params }) => {
+  const id = (await params).id!;
+
+  if (!mongoose.Types.ObjectId.isValid(id)) {
+    return NextResponse.json({ error: 'Invalid recipe ID' }, { status: 400 });
+  }
+
+  let body: unknown;
   try {
-    await connectDB();
-    const { id } = await params;
+    body = await request.json();
+  } catch {
+    return NextResponse.json({ error: 'Invalid JSON' }, { status: 400 });
+  }
 
-    if (!mongoose.Types.ObjectId.isValid(id)) {
-      return NextResponse.json({ error: 'Invalid recipe ID' }, { status: 400 });
-    }
+  const result = RecipeUpdateSchema.safeParse(body);
+  if (!result.success) {
+    return NextResponse.json(
+      { error: 'Validation failed', fieldErrors: zodErrorsToFieldErrors(result.error.issues) },
+      { status: 400 },
+    );
+  }
 
-    const body: unknown = await request.json();
-    const result = RecipeUpdateSchema.safeParse(body);
+  const data = result.data;
 
-    if (!result.success) {
-      const fieldErrors: Record<string, string[]> = {};
-      for (const issue of result.error.issues) {
-        const key = issue.path.join('.');
-        const arr = fieldErrors[key] ?? [];
-        arr.push(issue.message);
-        fieldErrors[key] = arr;
-      }
-      return NextResponse.json({ error: 'Validation failed', fieldErrors }, { status: 400 });
-    }
-
-    const data = result.data;
-
-    if (data.title) {
-      const existing = await RecipeModel.findOne({
-        title: {
-          $regex: `^${data.title.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}$`,
-          $options: 'i',
-        },
-        _id: { $ne: id },
-      }).lean();
-      if (existing) {
-        return NextResponse.json(
-          {
-            error: 'Title must be unique',
-            fieldErrors: { title: ['A recipe with this title already exists'] },
-          },
-          { status: 400 },
-        );
-      }
-    }
-
-    const updated = await RecipeModel.findByIdAndUpdate(id, data, {
-      new: true,
-      runValidators: true,
+  if (data.title) {
+    const existing = await RecipeModel.findOne({
+      title: {
+        $regex: `^${data.title.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}$`,
+        $options: 'i',
+      },
+      _id: { $ne: id },
     }).lean();
-
-    if (!updated) {
-      return NextResponse.json({ error: 'Recipe not found' }, { status: 404 });
+    if (existing) {
+      return NextResponse.json(
+        { error: 'Title must be unique', fieldErrors: { title: ['A recipe with this title already exists'] } },
+        { status: 400 },
+      );
     }
-
-    return NextResponse.json(updated);
-  } catch (err) {
-    const message = err instanceof Error ? err.message : 'Unknown error';
-    return NextResponse.json({ error: message }, { status: 500 });
   }
-}
 
-export async function DELETE(
-  _request: NextRequest,
-  { params }: { params: Promise<{ id: string }> },
-) {
-  try {
-    await connectDB();
-    const { id } = await params;
+  const updated = await RecipeModel.findByIdAndUpdate(id, data, {
+    new: true,
+    runValidators: true,
+  }).lean();
 
-    if (!mongoose.Types.ObjectId.isValid(id)) {
-      return NextResponse.json({ error: 'Invalid recipe ID' }, { status: 400 });
-    }
-
-    const deleted = await RecipeModel.findByIdAndDelete(id).lean();
-    if (!deleted) {
-      return NextResponse.json({ error: 'Recipe not found' }, { status: 404 });
-    }
-
-    return NextResponse.json({ success: true });
-  } catch (err) {
-    const message = err instanceof Error ? err.message : 'Unknown error';
-    return NextResponse.json({ error: message }, { status: 500 });
+  if (!updated) {
+    return NextResponse.json({ error: 'Recipe not found' }, { status: 404 });
   }
-}
+
+  return NextResponse.json(updated);
+});
+
+export const DELETE = withDB(async (_request: NextRequest, { params }) => {
+  const id = (await params).id!;
+
+  if (!mongoose.Types.ObjectId.isValid(id)) {
+    return NextResponse.json({ error: 'Invalid recipe ID' }, { status: 400 });
+  }
+
+  const deleted = await RecipeModel.findByIdAndDelete(id).lean();
+  if (!deleted) {
+    return NextResponse.json({ error: 'Recipe not found' }, { status: 404 });
+  }
+
+  return NextResponse.json({ success: true });
+});
