@@ -28,7 +28,7 @@ import { fetchRecipe, deleteRecipe } from '@/lib/api';
 
 export default function RecipeDetailPage() {
   const params = useParams();
-  const id = params.id as string;
+  const id = (Array.isArray(params.id) ? params.id[0] : params.id) as string;
   const router = useRouter();
   const queryClient = useQueryClient();
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
@@ -42,6 +42,7 @@ export default function RecipeDetailPage() {
     mutationFn: () => deleteRecipe(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: recipeKeys.lists() });
+      queryClient.removeQueries({ queryKey: recipeKeys.detail(id) });
       router.push('/recipes');
     },
   });

@@ -42,8 +42,9 @@ export default function TagsPage() {
   const createMutation = useMutation({
     mutationFn: createTag,
     onSuccess: (result) => {
-      if (result.fieldErrors) {
-        setFieldErrors(result.fieldErrors);
+      if (!result.ok) {
+        setFieldErrors(result.fieldErrors ?? {});
+        if (result.error) setServerError(result.error);
         return;
       }
       setNewTag('');

@@ -20,6 +20,7 @@ import Divider from '@mui/material/Divider';
 import AddIcon from '@mui/icons-material/Add';
 import DeleteIcon from '@mui/icons-material/Delete';
 import { RecipeSchema, type TCreateRecipeInput, type TRecipeDocument } from '@/lib/schemas/recipe';
+import { zodErrorsToFieldErrors } from '@/lib/api-utils';
 import Chip from '@mui/material/Chip';
 import { recipeKeys } from '@/lib/recipe-keys';
 import { fetchTags } from '@/lib/api';
@@ -141,14 +142,7 @@ export default function RecipeForm({ initialData, onSubmit, submitLabel }: Recip
 
     const result = RecipeSchema.safeParse(finalData);
     if (!result.success) {
-      const errors: Record<string, string[]> = {};
-      for (const issue of result.error.issues) {
-        const key = issue.path.join('.');
-        const arr = errors[key] ?? [];
-        arr.push(issue.message);
-        errors[key] = arr;
-      }
-      setFieldErrors(errors);
+      setFieldErrors(zodErrorsToFieldErrors(result.error.issues));
       return;
     }
 
@@ -230,6 +224,8 @@ export default function RecipeForm({ initialData, onSubmit, submitLabel }: Recip
             value={form.cookMin}
             onChange={(e) => setForm((prev) => ({ ...prev, cookMin: Number(e.target.value) || 0 }))}
             sx={{ minWidth: 130 }}
+            error={!!getFieldError('cookMin')}
+            helperText={getFieldError('cookMin')}
             required
             data-testid="recipe-cookmin-input"
           />
@@ -269,6 +265,7 @@ export default function RecipeForm({ initialData, onSubmit, submitLabel }: Recip
             renderValue={(selected) => (selected as string[]).map((t) => (
               <Chip key={t} label={t} size="small" sx={{ mr: 0.5 }} />
             ))}
+            disabled={tagsQuery.isLoading}
           >
             {availableTags.map((tag) => (
               <MenuItem key={tag} value={tag}>

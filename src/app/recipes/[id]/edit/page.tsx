@@ -13,22 +13,23 @@ import type { TCreateRecipeInput } from '@/lib/schemas/recipe';
 
 export default function EditRecipePage() {
   const params = useParams();
-  const id = params.id as string;
+  const id = Array.isArray(params.id) ? params.id[0] : params.id;
   const router = useRouter();
   const queryClient = useQueryClient();
 
   const query = useQuery({
-    queryKey: recipeKeys.detail(id),
-    queryFn: () => fetchRecipe(id),
+    queryKey: recipeKeys.detail(id as string),
+    queryFn: () => fetchRecipe(id as string),
   });
 
   async function handleSubmit(data: TCreateRecipeInput) {
-    const result = await updateRecipe(id, data);
-    if (result.fieldErrors) {
+    const result = await updateRecipe(id as string, data);
+    if (!result.ok) {
       return { fieldErrors: result.fieldErrors };
     }
     queryClient.invalidateQueries({ queryKey: recipeKeys.lists() });
-    queryClient.invalidateQueries({ queryKey: recipeKeys.detail(id) });
+    queryClient.invalidateQueries({ queryKey: recipeKeys.detail(id as string) });
+    queryClient.invalidateQueries({ queryKey: recipeKeys.tags() });
     router.push(`/recipes/${id}`);
   }
 

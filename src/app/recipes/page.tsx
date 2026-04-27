@@ -42,6 +42,7 @@ export default function RecipesPage() {
 
   const handleSearchChange = useCallback((value: string) => {
     setSearch(value);
+    setPage(1);
     if (timerRef.current) clearTimeout(timerRef.current);
     timerRef.current = setTimeout(() => setDebouncedSearch(value), 300);
   }, []);

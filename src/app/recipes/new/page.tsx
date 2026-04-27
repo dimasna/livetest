@@ -15,10 +15,11 @@ export default function NewRecipePage() {
 
   async function handleSubmit(data: TCreateRecipeInput) {
     const result = await createRecipe(data);
-    if (result.fieldErrors) {
+    if (!result.ok) {
       return { fieldErrors: result.fieldErrors };
     }
     queryClient.invalidateQueries({ queryKey: recipeKeys.lists() });
+    queryClient.invalidateQueries({ queryKey: recipeKeys.tags() });
     router.push(`/recipes/${result.recipe._id}`);
   }
 
