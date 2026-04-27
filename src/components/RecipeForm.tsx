@@ -11,14 +11,12 @@ import Select from '@mui/material/Select';
 import MenuItem from '@mui/material/MenuItem';
 import FormControl from '@mui/material/FormControl';
 import InputLabel from '@mui/material/InputLabel';
-import OutlinedInput from '@mui/material/OutlinedInput';
-import Checkbox from '@mui/material/Checkbox';
-import ListItemText from '@mui/material/ListItemText';
 import IconButton from '@mui/material/IconButton';
 import Alert from '@mui/material/Alert';
 import Divider from '@mui/material/Divider';
 import AddIcon from '@mui/icons-material/Add';
 import DeleteIcon from '@mui/icons-material/Delete';
+import Autocomplete from '@mui/material/Autocomplete';
 import { RecipeSchema, type TCreateRecipeInput, type TRecipeDocument } from '@/lib/schemas/recipe';
 import { zodErrorsToFieldErrors } from '@/lib/api-utils';
 import Chip from '@mui/material/Chip';
@@ -252,29 +250,34 @@ export default function RecipeForm({ initialData, onSubmit, submitLabel }: Recip
 
         <Divider />
         <Typography variant="h6">Tags</Typography>
-        <FormControl sx={{ minWidth: 200 }} data-testid="recipe-tags-select">
-          <InputLabel>Tags (max 5)</InputLabel>
-          <Select
-            multiple
-            value={form.tags}
-            onChange={(e) => {
-              const value = (e.target.value as string[]).slice(0, 5);
-              setForm((prev) => ({ ...prev, tags: value }));
-            }}
-            input={<OutlinedInput label="Tags (max 5)" />}
-            renderValue={(selected) => (selected as string[]).map((t) => (
-              <Chip key={t} label={t} size="small" sx={{ mr: 0.5 }} />
-            ))}
-            disabled={tagsQuery.isLoading}
-          >
-            {availableTags.map((tag) => (
-              <MenuItem key={tag} value={tag}>
-                <Checkbox checked={form.tags.includes(tag)} />
-                <ListItemText primary={tag} />
-              </MenuItem>
-            ))}
-          </Select>
-        </FormControl>
+        <Autocomplete
+          multiple
+          freeSolo
+          options={availableTags}
+          value={form.tags}
+          data-testid="recipe-tags-input"
+          onChange={(_, newValue) => {
+            const tags = newValue.slice(0, 5).map((t) => t.toLowerCase().trim()).filter((t) => /^[a-z0-9-]{2,20}$/.test(t));
+            const unique = [...new Set(tags)];
+            setForm((prev) => ({ ...prev, tags: unique }));
+          }}
+          renderTags={(value, getTagProps) =>
+            value.map((tag, index) => {
+              const { key, ...rest } = getTagProps({ index });
+              return <Chip key={key} label={tag} size="small" {...rest} />;
+            })
+          }
+          renderInput={(params) => (
+            <TextField
+              {...params}
+              label="Tags (max 5)"
+              placeholder="Type to search or add a tag"
+              error={!!getFieldError('tags')}
+              helperText={getFieldError('tags') || '2–20 chars, lowercase letters, numbers, hyphens'}
+            />
+          )}
+          disabled={form.tags.length >= 5}
+        />
         {getFieldError('tags') && (
           <Typography variant="caption" color="error">
             {getFieldError('tags')}
